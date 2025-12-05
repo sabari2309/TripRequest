@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>International Trip Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .container:hover {
+            box-shadow: 0 0 25px rgba(0,0,0,0.3);
+        }
+
+        .trip-details, .booking-details {
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .radio-group {
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .radio-group label {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .radio-group input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            margin-bottom: 5px;
+        }
+
+        .input-group input[type="text"], .input-group input[type="time"] {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .booking-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .booking-buttons button {
+            margin: 0 10px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>International Trip Details</h1>
+        <div id="tripDetails" class="trip-details"></div>
+        <div id="bookingsContainer"></div>
+        <div class="buttons" id="serviceButtons">
+            <button onclick="showModal('flight')">Book a Flight</button>
+            <button onclick="showModal('hotel')">Book a Hotel</button>
+            <button onclick="showModal('cruise')">Book a Cruise</button>
+            <button onclick="showModal('insurance')">Get Travel Insurance</button>
+            <button onclick="showModal('car')">Rent a Car</button>
+        </div>
+    </div>
+
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <div id="modalBody"></div>
+            <div class="input-group">
+                <label for="fromPlace">From:</label>
+                <input type="text" id="fromPlace" name="fromPlace">
+            </div>
+            <div class="input-group">
+                <label for="toPlace">To:</label>
+                <input type="text" id="toPlace" name="toPlace">
+            </div>
+            <div class="input-group">
+                <label for="bookingTime">Time:</label>
+                <input type="time" id="bookingTime" name="bookingTime">
+            </div>
+            <div class="modal-buttons">
+                <button onclick="saveBooking()">Save</button>
+                <button onclick="cancelBooking()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedBookingType = '';
+
+        window.onload = function() {
+            const empId = sessionStorage.getItem('empId');
+            const empName = sessionStorage.getItem('empName');
+            const tripName = sessionStorage.getItem('tripName');
+
+            const tripDetails = `
+                <p><strong>Employee ID:</strong> ${empId}</p>
+                <p><strong>Employee Name:</strong> ${empName}</p>
+                <p><strong>Trip Name:</strong> ${tripName}</p>
+            `;
+            document.getElementById('tripDetails').innerHTML = tripDetails;
+        };
+
+        function showModal(type) {
+            selectedBookingType = type;
+            document.getElementById('modalTitle').innerText = `Book a ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            document.getElementById('modalBody').innerHTML = getBookingOptions(type);
+            document.getElementById('bookingModal').style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').style.display = "none";
+        }
+
+        function getBookingOptions(type) {
+            let options = '';
+            switch(type) {
+                case 'flight':
+                    options = `
+                        <div class="radio-group">
+                            <label><input type="radio" name="bookingOption" value="Economy">Economy</label>
+                            <label><input type="radio" name="bookingOption" value="Business">Business</label>
+                            <label><input type="radio" name="bookingOption" value="First Class">First Class</label>
+                        </div>
+                    `;
+                    break;
+                case 'hotel':
+                    options = `
+                        <div class="radio-group">
+                            <label><input type="radio" name="bookingOption" value="Standard">Standard</label>
+                            <label><input type="radio" name="bookingOption" value="Deluxe">Deluxe</label>
+                            <label><input type="radio" name="bookingOption" value="Suite">Suite</label>
+                        </div>
+                    `;
+                    break;
+                case 'cruise':
+                    options = `
+                        <div class="radio-group">
+                            <label><input type="radio" name="bookingOption" value="Ocean View">Ocean View</label>
+                            <label><input type="radio" name="bookingOption" value="Balcony">Balcony</label>
+                            <label><input type="radio" name="bookingOption" value="Suite">Suite</label>
+                        </div>
+                    `;
+                    break;
+                case 'insurance':
+                    options = `
+                        <div class="radio-group">
+                            <label><input type="radio" name="bookingOption" value="Basic">Basic</label>
+                            <label><input type="radio" name="bookingOption" value="Comprehensive">Comprehensive</label>
+                        </div>
+                    `;
+                    break;
+                case 'car':
+                    options = `
+                        <div class="radio-group">
+                            <label><input type="radio" name="bookingOption" value="Economy">Economy</label>
+                            <label><input type="radio" name="bookingOption" value="SUV">SUV</label>
+                            <label><input type="radio" name="bookingOption" value="Luxury">Luxury</label>
+                        </div>
+                    `;
+                    break;
+            }
+            return options;
+        }
+
+        function saveBooking() {
+            const bookingOption = document.querySelector('input[name="bookingOption"]:checked').value;
+            const fromPlace = document.getElementById('fromPlace').value;
+            const toPlace = document.getElementById('toPlace').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+
+            const bookingDetails = `
+                <div class="booking-details">
+                    <p><strong>Booking Type:</strong> ${selectedBookingType}</p>
+                    <p><strong>Option:</strong> ${bookingOption}</p>
+                    <p><strong>From:</strong> ${fromPlace}</p>
+                    <p><strong>To:</strong> ${toPlace}</p>
+                    <p><strong>Time:</strong> ${bookingTime}</p>
+                    <button onclick="confirmBooking()">Confirm</button>
+                    <button onclick="rejectBooking()">Reject</button>
+                </div>
+            `;
+            document.getElementById('bookingsContainer').innerHTML = bookingDetails;
+            document.getElementById('serviceButtons').classList.add('hidden'); // Hide service buttons
+            closeModal();
+        }
+
+        function confirmBooking() {
+            const empName = sessionStorage.getItem('empName');
+            const tripName = sessionStorage.getItem('tripName');
+            const empId = sessionStorage.getItem('empId');
+            const fromPlace = document.getElementById('fromPlace').value;
+            const toPlace = document.getElementById('toPlace').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            const bookingOption = document.querySelector('input[name="bookingOption"]:checked').value;
+
+            $.post("bookingServlet", {
+                empId: empId,
+                empName: empName,
+                tripName: tripName,
+                bookingType: selectedBookingType,
+                bookingOption: bookingOption,
+                fromPlace: fromPlace,
+                toPlace: toPlace,
+                bookingTime: bookingTime
+            }).done(function(response) {
+                const bookingDetails = `
+                    <div class="booking-details">
+                        <p><strong>Booking Type:</strong> ${selectedBookingType}</p>
+                        <p><strong>Option:</strong> ${bookingOption}</p>
+                        <p><strong>From:</strong> ${fromPlace}</p>
+                        <p><strong>To:</strong> ${toPlace}</p>
+                        <p><strong>Time:</strong> ${bookingTime}</p>
+                        <button onclick="deleteBooking('${selectedBookingType}', '${bookingOption}', '${fromPlace}', '${toPlace}', '${bookingTime}')">Delete</button>
+                        <button onclick="logout()">Logout</button>
+                    </div>
+                `;
+                document.getElementById('bookingsContainer').innerHTML = bookingDetails;
+            }).fail(function(error) {
+                alert('Failed to save the booking. Please try again.');
+            });
+        }
+
+        function rejectBooking() {
+            document.getElementById('bookingsContainer').innerHTML = '';
+            document.getElementById('serviceButtons').classList.remove('hidden'); // Show service buttons again
+        }
+        function logout(){
+           sessionStorage.clear();
+           window.location.href="index.html";
+       }
+        function deleteBooking(type, option, from, to, time) {
+            const empName = sessionStorage.getItem('empName');
+            const tripName = sessionStorage.getItem('tripName');
+            const empId = sessionStorage.getItem('empId');
+
+            $.post("deleteBooking", {
+                empId: empId,
+                empName: empName,
+                tripName: tripName,
+                bookingType: type,
+                bookingOption: option,
+                fromPlace: from,
+                toPlace: to,
+                bookingTime: time
+            }).done(function(response) {
+                alert("Deleted successfully");
+                window.location.href="index.html";
+            }).fail(function(error) {
+                alert("Failed to delete booking: " + error.responseText);
+            });
+        }
+    </script>
+</body>
+</html>

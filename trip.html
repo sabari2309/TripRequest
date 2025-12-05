@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trip Management - Trip Details</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e9ecef;
+        }
+
+        h1, h2 {
+            color: #343a40;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="date"] {
+            padding: 10px;
+            width: calc(100% - 20px);
+            margin-bottom: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus {
+            border-color: #80bdff;
+            outline: none;
+        }
+
+        .radio-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .radio-group span {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .radio-group label {
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .radio-group input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            display: block;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 5px rgba(0,123,255,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="welcomeMessage"></h1>
+        <h2>Create a Trip</h2>
+        <form id="tripForm">
+            <label for="tripName">Trip Name:</label>
+            <input type="text" placeholder="Enter trip name" id="tripName" name="tripName" required>
+
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" name="startDate" required>
+
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate" name="endDate" required>
+
+            <div class="radio-group">
+                <span>Trip Type:</span>
+                <label>
+                    <input type="radio" id="domestic" name="tripType" value="Domestic" required>
+                    Domestic
+                </label>
+                <label>
+                    <input type="radio" id="international" name="tripType" value="International" required>
+                    International
+                </label>
+            </div>
+            <button type="button" onclick="makeTrip()">Make Trip</button>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const empName = sessionStorage.getItem('empName');
+            const empId = sessionStorage.getItem('empId');
+            if (empName && empId) {
+                $('#welcomeMessage').text(`Hi ${empName} (ID: ${empId})`);
+            }
+        });
+
+        function makeTrip() {
+            const tripName = $('#tripName').val();
+            const startDate = $('#startDate').val();
+            const endDate = $('#endDate').val();
+            const tripType = $('input[name="tripType"]:checked').val();
+
+            if (!tripName || !startDate || !endDate || !tripType) {
+                alert('Please fill all the fields');
+                return;
+            }
+
+            $.ajax({
+                url: 'CreateTripServlet',
+                type: 'POST',
+                contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                dataType: 'text',
+                data: {
+                    empName: sessionStorage.getItem('empName'),
+                    empId: sessionStorage.getItem('empId'),
+                    tripName: tripName,
+                    startDate: startDate,
+                    endDate: endDate,
+                    tripType: tripType
+                },
+                success: function(response) {
+                    response = response.trim();
+                    if (response === 'true') {
+                        alert("Trip created successfully");
+                        sessionStorage.setItem('tripName', tripName);
+                        sessionStorage.setItem('startDate', startDate);
+                        sessionStorage.setItem('endDate', endDate);
+                        sessionStorage.setItem('tripType', tripType);
+
+                        if (tripType === 'Domestic') {
+                            window.location.href = "domestic.html";
+                        } else if (tripType === 'International') {
+                            window.location.href = "international.html";
+                        }
+                    } else if (response === 'Invalid') {
+                        alert("Trip already exists");
+                        location.reload();
+                    } else {
+                        alert("Failed to create trip");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Failed to create trip. Please try again.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
